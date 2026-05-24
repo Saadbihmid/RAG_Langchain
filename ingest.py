@@ -1,0 +1,32 @@
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_chroma import Chroma
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# load the pdf
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+loader = PyPDFLoader(os.path.join(BASE_DIR, "attention.pdf"))
+pages = loader.load()
+
+# splittig the data into chunks
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50
+)
+chunks = splitter.split_documents(pages)
+
+
+# embed and store data in Chroma
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+
+vector_store = Chroma.from_documents(
+    documents = chunks,
+    embedding= embeddings,
+    persist_directory="chroma_db"
+)
+
+print(f"Done! {len(chunks)} are embed and stored.")
